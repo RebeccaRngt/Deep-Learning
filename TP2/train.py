@@ -12,7 +12,7 @@ generator = torch.Generator().manual_seed(42)
 train_set, val_set, test_set = random_split(dataset, [0.8, 0.1, 0.1], generator=generator)
 
 train_loader = DataLoader(train_set, batch_size=64, shuffle=True)
-val_loader   = DataLoader(val_set, batch_size=64, shuffle=True)
+val_loader   = DataLoader(val_set, batch_size=64, shuffle=False)
 test_loader  = DataLoader(test_set, batch_size=64, shuffle=False)
 
 batch = next(iter(train_loader))
