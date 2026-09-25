@@ -3,6 +3,8 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
+import numpy as np
+from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 
 # (Importez votre CardioDataset et vos loaders ici)
 from dataset import CardioDataset
@@ -36,6 +38,37 @@ class MLP(nn.Module):
 # Initialisation
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
+def evaluate_model(model, test_loader):
+    model.eval()
+    all_targets = []
+    all_preds_probs = []
+
+    with torch.no_grad(): # Désactiver le calcul des gradients
+        for batch in test_loader:
+            inputs, targets = batch["features"].to(device), batch["labels"].to(device)
+            outputs = model(inputs)
+
+            # Stocker les probabilités et les cibles pour sklearn
+            all_targets.extend(targets.cpu().numpy())
+            all_preds_probs.extend(outputs.cpu().numpy())
+
+    # Conversion en numpy array
+    all_targets = np.array(all_targets)
+    all_preds_probs = np.array(all_preds_probs)
+
+    # Prédictions binaires (seuil à 0.5)
+    all_preds_classes = (all_preds_probs > 0.5).astype(int)
+
+    # Calcul des métriques
+    precision = precision_score(all_targets, all_preds_classes)
+    recall = recall_score(all_targets, all_preds_classes)
+    f1 = f1_score(all_targets, all_preds_classes)
+    auc = roc_auc_score(all_targets, all_preds_probs)
+
+    print(f"Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f} | AUC: {auc:.4f}")
+
+
 def train_model(opt_name, learning_rate=0.001, epochs=30):
     model = MLP(input_size=16, hidden_size=128).to(device)
     criterion = nn.BCELoss()
@@ -68,6 +101,7 @@ def train_model(opt_name, learning_rate=0.001, epochs=30):
 
     writer.close()
 
-# Lancement des expériences
-for opt in ["SGD", "Momentum", "RMSprop", "Adam"]:
-    train_model(opt, learning_rate=0.001)
+    evaluate_model(model, test_loader)
+
+
+train_model("RMSprop", learning_rate=0.001)

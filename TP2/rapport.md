@@ -10,6 +10,8 @@
 
 1.2) Si le dataset était trop volumineux pour tenir dans la RAM, J'utiliserai la classe IterableDataset à la place de Dataset
 
+&nbsp;
+
 ## Exercice 2: MLP et Régularisation L1 / L2
 
 &nbsp;
@@ -31,7 +33,7 @@ s'appelle sous-apprentissage (underfitting)
 
 &nbsp;
 
-3.1)  ! [Capture d'écran de Tensorboard des courbes de perte des 4 optimiseurs](images/courbes_optimiseurs.png)
+3.1) [Capture d'écran de Tensorboard des courbes de perte des 4 optimiseurs](images/courbes_optimiseurs.png)
 
 &nbsp;
 
@@ -40,3 +42,26 @@ s'appelle sous-apprentissage (underfitting)
 &nbsp;
 
 3.3) La courbe de l'optimiseur SGD descend très lentement pour stagner vers 0,64 à la fin tandis que pour celle de l'optimiseur Momentum la pente est bien plus prononcé dès les premières epochs et atteint une perte finale d'environ 0,58. L'effet de l'ajout du Momentum sur la descente de gradient est le suivant: Le Momentum garde en mémoire la direction des gradients précédents, ce qui crée une sorte d'inertie et permet donc d'accélérer dans la bonne direction, de réduire les zigzags et de rendre la descente vers le minimum plus rapide et plus stable
+
+&nbsp;
+
+## Exercice 4: Analyse des métriques (Précision, Rappel, F1, AUC)
+
+&nbsp;
+
+4.1)
+Précision (Precision) : représente la part de prédictions positives qui sont correctes
+
+$Precision\ =\ \frac{TP}{TP\ +\ FP}$
+
+Rappel (Recall) : mesure la proportion d'éléments réellement positifs qui ont été correctement identifiés par le modèle
+
+$Recall\ =\ \frac{TP}{TP\ +\ FN}$
+
+&nbsp;
+
+4.2) Dans le contexte médical (détecter une maladie cardiovasculaire), il vaut mieux privilégier un fort rappel car on veut éviter de ne pas décter une personne réellement malade (faux négatif), qu'un faux positif peut entrainer des examens supplémentaires
+
+&nbsp;
+
+4.3) L'aire sous la courbe ROC (AUCpar rapport aux autres métriques calculées à un seuil fixe de 0,5) mesure la capacité du modèle à distinger les malades des non-malades pour différents seuils pas seulement 0,5. Plus elle est grande, meilleur est le modèle
