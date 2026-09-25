@@ -58,6 +58,11 @@ Rappel (Recall) : mesure la proportion d'éléments réellement positifs qui ont
 
 $Recall\ =\ \frac{TP}{TP\ +\ FN}$
 
+
+###### TP: True Positif (Vrai Positif)
+###### FP: False Positif (Faux Positif)
+###### FN: False Negatif (Faux Négatif)
+
 &nbsp;
 
 4.2) Dans le contexte médical (détecter une maladie cardiovasculaire), il vaut mieux privilégier un fort rappel car on veut éviter de ne pas décter une personne réellement malade (faux négatif), qu'un faux positif peut entrainer des examens supplémentaires
