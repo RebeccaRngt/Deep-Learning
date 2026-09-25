@@ -14,15 +14,16 @@
 
 &nbsp;
 
-2.1)
+2.1) Avec l1_lambda = 0.1 et l2_lambda = 0, Loss devient Loss = base_loss + 0.1 * l1_penality. La pénalité L1 pend plus d'importance dans la Loss et pousse les poids du réseau vers 0. Le modèle va préférer régulariser fortement en réduisant ses poids plutôt que d'apprendre des rélations complexes sur les données ce qui limite sa capacité à apprendre correctement, ce phénomène d
+s'appelle sous-apprentissage (underfitting)
 
 &nbsp;
 
-2.2)
+2.2) L'argument de l'optimisateur (ex: optim.SGD) qui permet d'appliquer cette régularisation L2 automatique est weight_decay
 
 &nbsp;
 
-2.3)
+2.3) La différence conceptuelle sur les poids du réseau entre la régularisation L1 et L2 vient de la forme de la pénalité. La régularisation L1 favorise la sparsité, elle pousse certains poids exactement vers 0 tandis que la régularisation L2 tend à rétrécir les poids sans nécéssairement les mettre à 0
 
 &nbsp;
 
