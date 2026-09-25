@@ -31,7 +31,7 @@ s'appelle sous-apprentissage (underfitting)
 
 &nbsp;
 
-3.1)  ! [Capture d'écran de Tensorboard des courbes de perte des 4 optimiseurs][images/courbes_optimiseurs.png]
+3.1)  ! [Capture d'écran de Tensorboard des courbes de perte des 4 optimiseurs](images/courbes_optimiseurs.png)
 
 &nbsp;
 

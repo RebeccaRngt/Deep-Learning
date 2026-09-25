@@ -44,7 +44,7 @@ CUDA available retourne False et 2 raisons pourraient possiblement expliquer le 
 
 3.a)
 
-! [Dessin du MLP][images/mlp.png]
+! [Dessin du MLP](images/mlp.png)
 
 Sans biais
 
@@ -102,15 +102,15 @@ Y  : (N, 2\)
 
 3.c)
 
-![Reponse question 3.c partie 1][images/q3c1.png]
+![Reponse question 3.c partie 1](images/q3c1.png)
 
-![Reponse question 3.c partie 2][images/q3c2.png]
+![Reponse question 3.c partie 2](images/q3c2.png)
 
 &nbsp;
 
 3.d)
 
-![Reponse question 3.d][images/q3d.png]
+![Reponse question 3.d](images/q3d.png)
 
 3.e) On utilise la règle de la chaîne car un réseau de neurones profond est composé de plusieurs couches et chacune réalise une fonction qui dépend de la précédente. Pour calculer l’impact d’un poids sur l’erreur finale, il faut multiplier les dérivées obtenues à tavers les différentes couches. La règle de la chaîne permet donc de calculer les gradients de chaque poids ce qui permet de mettre à jour les paramètres du réseau avec la descente de gradient.
 
