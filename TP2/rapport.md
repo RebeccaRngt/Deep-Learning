@@ -27,3 +27,16 @@ s'appelle sous-apprentissage (underfitting)
 
 &nbsp;
 
+## Exercice 3: Comparaison des Optimiseurs et TensorBoard
+
+&nbsp;
+
+3.1)  ! [Capture d'écran de Tensorboard des courbes de perte des 4 optimiseurs][images/courbes_optimiseurs.png]
+
+&nbsp;
+
+3.2) L'optimiseur qui converge le plus rapidement initialement est RMSprop.
+
+&nbsp;
+
+3.3) La courbe de l'optimiseur SGD descend très lentement pour stagner vers 0,64 à la fin tandis que pour celle de l'optimiseur Momentum la pente est bien plus prononcé dès les premières epochs et atteint une perte finale d'environ 0,58. L'effet de l'ajout du Momentum sur la descente de gradient est le suivant: Le Momentum garde en mémoire la direction des gradients précédents, ce qui crée une sorte d'inertie et permet donc d'accélérer dans la bonne direction, de réduire les zigzags et de rendre la descente vers le minimum plus rapide et plus stable

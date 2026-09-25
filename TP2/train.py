@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
+from torch.utils.tensorboard import SummaryWriter
 
 # (Importez votre CardioDataset et vos loaders ici)
 from dataset import CardioDataset
@@ -34,31 +35,39 @@ class MLP(nn.Module):
 
 # Initialisation
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model = MLP(input_size=batch['features'].shape[1], hidden_size=128).to(device)
 
-criterion = nn.BCELoss()
-optimizer = optim.SGD(model.parameters(), lr=0.01)
+def train_model(opt_name, learning_rate=0.001, epochs=30):
+    model = MLP(input_size=16, hidden_size=128).to(device)
+    criterion = nn.BCELoss()
 
-l1_lambda = 0.1
-l2_lambda = 0
+    # Choix de l'optimiseur
+    if opt_name == "SGD":
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate)
+    elif opt_name == "Momentum":
+        optimizer = optim.SGD(model.parameters(), lr=learning_rate, momentum=0.9)
+    elif opt_name == "RMSprop":
+        optimizer = optim.RMSprop(model.parameters(), lr=learning_rate)
+    elif opt_name == "Adam":
+        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
-for epoch in range(10):
-    model.train()
-    for batch in train_loader:
-        inputs, targets = batch["features"].to(device), batch["labels"].to(device)
-        
-        optimizer.zero_grad()
-        outputs = model(inputs)
-        base_loss = criterion(outputs, targets)
-        
-        # Calcul de la pénalité L1 (somme des valeurs absolues des poids)
-        l1_penalty = sum(p.abs().sum() for p in model.parameters())
-        
-        # Calcul de la pénalité L2 (somme des carrés des poids)
-        l2_penalty = sum(p.pow(2).sum() for p in model.parameters())
-        
-        # Loss totale
-        loss = base_loss + l1_lambda * l1_penalty + l2_lambda * l2_penalty
-        
-        loss.backward()
-        optimizer.step()
+    writer = SummaryWriter(f'runs/cardio_{opt_name}_lr{learning_rate}')
+
+    for epoch in range(epochs):
+        model.train()
+        running_loss = 0.0
+        for batch in train_loader:
+            inputs, targets = batch["features"].to(device), batch["labels"].to(device)
+            optimizer.zero_grad()
+            loss = criterion(model(inputs), targets)
+            loss.backward()
+            optimizer.step()
+            running_loss += loss.item()
+
+        # Logging de la loss moyenne par epoch
+        writer.add_scalar('Training Loss', running_loss / len(train_loader), epoch)
+
+    writer.close()
+
+# Lancement des expériences
+for opt in ["SGD", "Momentum", "RMSprop", "Adam"]:
+    train_model(opt, learning_rate=0.001)
