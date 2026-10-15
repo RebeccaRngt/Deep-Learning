@@ -79,3 +79,25 @@ La couche qui concentre plus de 99% des paramètres est la 1ère, car elle doit 
 2.b.3) Le MLP possède envirion 39 millions de paramètres et utilise environ 610 KB d'activations par image, contre 61 millions de paramètres et 2 440 KB d'activations pour AlexNet. AlexNet utilise plus de mémoire car ses couches convultionnelles produisent de grandes cartes de caractéristiques contenant beaucoup de valeurs interédiaires contrairement au MLP qui a des couches cachées de 256 neurones seulement. Donc le nombre de paramètres dépend des connexions et des poids du réseau, tandis que la mémoire des activations dépend surtout de la taille des sorties intermédiaires à conserver pendant l'apprentissage
 
 &nbsp;
+
+## Exercice 3: Boucle d'entraînement, Early Stopping et Comparaison rapide
+
+&nbsp;
+
+3.1) Vis à vos des couches nn.dropout, le rôle exact de model.eval() est d'activer le Drotpout pendant l'entrainement (certains neurones sont désactivés aléatoirement pour limiter le surapprentissage) et celui de model.eval() est de désactiver le Dropout pendant l'évaluation, si on l'oublie les prédictions restent aléatoires en partie, ce qui rend l'évaluation moins stable et moins repésentatives ddes performances du modèle
+
+&nbsp;
+
+3.2) A l'initialisation, sur un jeu de données de 1000 classes équilibrés comme ImageNet, la valeur théorique de l'accuracy est de 0,1% et celle de la CrossEntropyLoss est d'environ 6,91 (ln(1000)). Les 1ères époques sont cohérentes, à l'étape 0, AlexNet démarre à 6,91 en loss et 0,001 en accuracy et le MLP est dans le même ordre de grandeur
+
+&nbsp;
+
+3.3) Le modèle qui apprend le mieux est AlexNet car sa perte diminue nettement plus vite et descend plus bas que celle du MLP, aussi son accuracy est supérieure en validation. Et le modèle qui surapprend le plus vite est AlexNet également car bien que la perte de validation ne fait que baisser, il y a une accélération très forte de son apprentissage en train par rapport au rythme plus plat du MLP
+
+&nbsp;
+! [Courbes Accuracy (train/val)](images/accurancy.png)
+! [Courbes loss (train/val)](images/loss.png)
+
+### Étape 2 : Impact de la profondeur (Modification d'architecture)
+
+3.3.b)  La difficulté à démarrer l'apprentissage qu'on observez au début relève d'un sous-apprentissage, car l'errur d'entrainement du modèle plus profond reste constamment plus élevée et sa précision que celles de l'AmexNet initial. Du point de vue du gradient, comme le réseau est plus profond, le signal d'erreur (gradient) qui repart de la fin vers le début s'affaiblit à chaque couche taversée. Les premières couches reçoivent donc un signal très faible, ce qui fait que leurs poids se mettent à jour plus lentement au démarrage
