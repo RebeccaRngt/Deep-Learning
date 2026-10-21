@@ -55,3 +55,50 @@ def pad_or_truncate(sequence, max_length=SEQ_LENGTH):
         return sequence[:max_length]
     else:
         return sequence + " " * (max_length - len(sequence))
+
+
+class MusicDataset(Dataset):
+    def __init__(self, raw_data, seq_length=SEQ_LENGTH, subset_size=None):
+        if subset_size is not None:
+            raw_data = raw_data[:subset_size]
+        
+        self.data = [
+            vectorize_string(pad_or_truncate(song["abc notation"], seq_length))
+            for song in raw_data
+        ]
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        seq = self.data[idx]
+        # Entrée : tous les caractères sauf le dernier
+        x = torch.tensor(seq[:-1], dtype=torch.long)
+        # Cible : tous les caractères sauf le premier (décalage de +1)
+        y = torch.tensor(seq[1:], dtype=torch.long)
+        return x, y
+
+class MusicModel(nn.Module):
+    def __init__(self, vocab_size, embedding_dim=256, hidden_size=512, rnn_type="lstm"):
+        super().__init__()
+        self.rnn_type = rnn_type.lower()
+        self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        
+        if self.rnn_type == "lstm":
+            self.rnn = nn.LSTM(embedding_dim, hidden_size, batch_first=True)
+        elif self.rnn_type == "rnn":
+            self.rnn = nn.RNN(embedding_dim, hidden_size, batch_first=True)
+        else:
+            raise ValueError("rnn_type doit être 'rnn' ou 'lstm'")
+            
+        self.fc = nn.Linear(hidden_size, vocab_size)
+
+    def forward(self, x, hidden_state=None):
+        # x : (batch_size, seq_len)
+        embeds = self.embedding(x)               # -> (batch_size, seq_len, embedding_dim)
+        out, hidden_state = self.rnn(embeds, hidden_state) # -> out : (batch_size, seq_len, hidden_size)
+        logits = self.fc(out)                    # -> (batch_size, seq_len, vocab_size)
+        return logits, hidden_state
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
