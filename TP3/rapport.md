@@ -19,6 +19,8 @@ Les moyennes et les écarts-types doivent être calculés uniquement sur le jeu 
 
 ## Exercice 2: Étude théorique et implémentation des architectures
 
+&nbsp;
+
 ### Étape 1 : Implémentation du MLP
 
 &nbsp;
@@ -95,7 +97,7 @@ La couche qui concentre plus de 99% des paramètres est la 1ère, car elle doit 
 3.3) Le modèle qui apprend le mieux est AlexNet car sa perte diminue nettement plus vite et descend plus bas que celle du MLP, aussi son accuracy est supérieure en validation. Et le modèle qui surapprend le plus vite est AlexNet également car bien que la perte de validation ne fait que baisser, il y a une accélération très forte de son apprentissage en train par rapport au rythme plus plat du MLP
 
 &nbsp;
-! [Courbes Accuracy (train/val)](images/accurancy.png)
+! [Courbes Accuracy (train/val)](images/accuracy.png)
 ! [Courbes loss (train/val)](images/loss.png)
 
 ### Étape 2 : Impact de la profondeur (Modification d'architecture)
