@@ -82,3 +82,44 @@ Le LTSM a exactement 4 fois plus de paramètres que le bloc RNN car il calcule 4
 
 2.3) Pour nn.RNN, hidden_state est un tenseur unique de forme (num_layers, batch_size, hidden_size). Pour nn.LSTM, hidden_state est un tuple de deux tenseurs : cell state qui est la mémoire à long terme et hidden state qui est la mémoire à court teme et la sortie directe à l'instant t
 
+&nbsp;
+
+## Exercice 3: Entraînement, Dynamique des Gradients et Comparaison RNN vs LSTM
+
+&nbsp;
+
+3.1) On doit écrire logits.reshape(-1, vocab_size) et y.reshape(-1) avant d'appeler loss_fn car la fonction nn.crossEntropy de Pytorch demande un tenseur de prédictions à 2 dimensions et un tenseur cible à une dimension, comme nos pédictions sortent du modèle sous 3 dimensions (batch_size, seq_len, vocab_size) et nos cibles à 2 dimensions (batch_size, seq_len), on regroupe le lot et la longueur de séquence en une unique dimension de N échantillons
+La valeur numérique de la dimension obtenue à la place du -1 est 128 x 499 = 63 872, et représente le nombre total de prédictions de caractères individuels que le modèle doit évaluer simultanément sur l'ensemble du lot
+
+&nbsp;
+
+3.2) La fonction clip_grad_norm_ doit impérativement être appelée après loss.backward() mais avant optimizer.step() pour respecter l'ordre de mise à jour des paramètres, elle intervient après loss.backward() parce que les gradients n'esistent tout simplement pas avant la rétropropagation : c'est elle qui les calcule et les place dans l'attribut .grad de chaque poids et elle vient avant optimizer.step() car l'optimiseur utilise ces gradients pour modifier directement les poids du modèle, il faut donc borner leur norme avant cette mise à jour pour pas que les paramètres ne divergent
+
+&nbsp;
+
+3.3) 
+
+[Courbes comparatives TensorBoard Loss/Validation](images/loss_val.png)
+
+&nbsp;
+
+[Courbes comparatives TensorBoard Accuracy/Validation](images/acc_val.png)
+
+&nbsp;
+
+[Courbes comparatives TensorBoard GradNorm/step](images/gradnorm_step.png)
+
+&nbsp;
+
+Sur le graphique GradNorm/step, on remarque que la norme des gradients dépasses 1,5 au début de l'entrainement pour les 2 RNN. Sans gradient clipping, la perte de validation varie beaucoup surtout jusqu'à l'époque 7, avec une seuil de clipping de 1,0, la courbe devient plus stable. Le problème théorique du RNN simple que le gradient clipping corrige est l'explosion du gradient ce qui arrive souvent dans les RNN quand ils traitent de longeus séquences, ici de 500 caractères
+Le LSTM apprend plus rapidemment que le RNN, dès la première époque , sa perte de validation est inférieure à 0,80. A l'époque 15, le LSTM obitent de meilleurs résultats:
+- Loss : 0,56 contre 0,74 pour le RNN
+- Accuracy : 82% contre 77% pour le RNN
+Le LSTM parvient à capturer des dépendances plus longues dans la partition musicale. Il y a le problème de disparition du gradient dans les RNN simples le LSTM utilise l'équation de mise à jour du cell state. Ce mécanisme permet de mieux conserver les informations sur de longues séquences et donc de mieux apprendre les structures musicales
+
+&nbsp;
+
+3.4) L'Accuracy/Validation affichée est artificiellement optimiste quant à la capacité réelle du modèle à prédire des notes de musique car la partition contient environ 250 caractères, mais les séquences ont une longeur fixe de 500 caractères. Le reste est donc rempli avec des espaces (' '). Comme ces espaces sont faiciles à prédire, le modèle obtient beaucoup de bonnes réponses sans forcément bien prédire les notes. L'accuracy affichée est donc lus élevée que la performance réell sur les caractères musicaux
+La modification simple de nn.CrossEntropyLoss qui permettrait de ne pas compter le padding dans la perte  est:
+loss_fn = nn.CrossEntropy(ignore_index=char_to_index[" "])
+Cette modification permet d'ignorer les espaces lors du calcul de la perte
