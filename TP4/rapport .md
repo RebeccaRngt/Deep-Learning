@@ -123,3 +123,77 @@ Le LSTM parvient à capturer des dépendances plus longues dans la partition mus
 La modification simple de nn.CrossEntropyLoss qui permettrait de ne pas compter le padding dans la perte  est:
 loss_fn = nn.CrossEntropy(ignore_index=char_to_index[" "])
 Cette modification permet d'ignorer les espaces lors du calcul de la perte
+
+&nbsp;
+
+## Exercice 4:  Génération musicale, Température et Job Slurm
+
+&nbsp;
+
+### Étape 1 : Implémentation de la génération avec propagation de l'état caché
+
+&nbsp;
+
+4.1.1) Sans conserver le hiden_state, le modèle doit recalculer toute la séquence à chaque nouveau caractère généré et ça demande beaucoup de calculs, avec un complexité quadratique. Avec notre methode, on conserve le hidden_state et ke modèle traite seulement un nouveu caractère à chaque étape. Cela permet de diminuer les calculs et d'obtenir une compléxité linéaire pour la génération, elle est plus rapide pour générer des longues séquences
+
+&nbsp;
+
+4.1.2) La température T permet de contrôler le choix des caractères générés par le modèle
+- Quand (T \to 0^+): le modèle choisit presque toujours le caractère ayant la probabilité la plus élevée, le résultat est donc plus prévisible et moins varié
+- Quand (T T \to +\infty): les probabilités des caractères deviennent presque égales, le modèle choisit alors les caractères de manière presque aléatoire, ce qui donne des résultats plus variés, mais souvent moins cohérents.
+Donc une température faible favorise la cohérence et une élevée augmente la diversité des caractères générés
+
+&nbsp;
+
+4.1.3) 
+
+- 1ère partition:
+
+ Température T = 0.2
+X:1
+T:Irish Reel
+M:4/4
+L:1/8
+K:D
+ A | F2 AF E2 FE | D2 FD E2 E2 | F2 AF E2 E2 | F2 A2 A2 F2 | E2 E2 E2 F2 | D2 D2 D2 D2 | 
+ D2 D2 D2 F2 | E2 E2 E2 F2 | D2 D2 D2 D2 | D2 D2 D2 D2 | E2 E2 E2 A2 | F2 A2 A2 F2 | E2 E2 E2 F2 | 
+ A2 F2 E2 D2 | D2 D2 D2 :|
+
+La partition respecte globalement la synthaxe ABC avec des notes valides et des barres de mesure mais certaines mesures ne respectent pas exactement le rythme 4/4. Musicalement, je remarque beaucoup de répétitions, (des notes D2 et E2 notamment) après la mélodie reste assez cohérente, mais elle manque de variété
+
+- 2e partition:
+
+ Température T = 0.8
+X:1
+T:Irish Reel
+M:4/4
+L:1/8
+K:D
+ AG | A2 AG ED EF | G2 ED CD ED | A,C E2 A,D D2 :: BBBA BcdB | AF F2 dFFD | B,EE EDB, B,2 :|
+
+Cette partition a une meilleure diversité musicale. Les notes sont plus variées et la mélodie est moins répétitives (c'est celle que je préfère). La syntaxe ABC est globalement correcte, même si certaines mesures sont incomplètes ou contiennent trop de notes, le résultat est plus naturel et plus intéressant
+
+- 3e partiton:
+
+ Température T = 2.0
+X:1
+T:Irish Reel
+M:4/4
+L:1/8
+K:D
+ eege{a} f!p!a2N<decTwBGh e2TGF{e}dAGFga/g}9Ag z"Ab0<g[ $urnacudL]" exTcA D2fa | !0ulfrmate{6evdeYe."Fsbacfg [f9]Mdnc BoAG F.d.d.A !ferm]edagg!TagfMf[M:^165] */a3/2Wa2g- f6-TE82] | 
+ cDCA{Lfe}[fDdGdf.E8!ufuHg5eO (vvA-C]B o-),E) !we[aarde!M .A2 | e(Hc-B)A"^*)"{F} FADF{AAc}d4>c |{B2:O3/8 mdA(8a3)z/4g 
+
+Avec cette température, la partition devient désordonnée, on retrouve des caractères et des symboles qui ne respectent pas la syntaxe ABC. Les mesures ne sont plus correctement structurées, une partie de la partition n'est pas lu par ABC Player car jugée indéfinie. Musicalement, c'est chaotique et ça ne ressemble plus à une mélodie cohérente
+
+Donc la température influence directement la qualité des partitions générées. La témpérature T = 0.8 est le meilleur compromis entre variété des notes et cohérence de la musique
+
+
+&nbsp;
+
+### Étape 2 : Entraînement à plus grande échelle via sbatch
+
+&nbsp;
+
+4.c) Pour augmenter les données, on peut transposer les partitions dans différentes tonalités en décalant les notes de quelques demi-tons. Pour ça, il faut modifier la tonalité dans l'en-tête K: et adapter les notes de partition, prendre en compte les octaves, les altérations en gardant les durées et barres de mesures
+Cette methode permet de créer plsu de données d'entrainement à partir des partitions existantes, sans changer leur structure musicale, le modèle apprend donc les mêmes mélodies dans plusieurs tonalités, au lieu de mémoriser uniquement des suites de notes précises. Celà permet de limiter le sur-apprentissage et d'aider le modèle à mieux générer de nouvelles partitions

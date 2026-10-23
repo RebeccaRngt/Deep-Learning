@@ -206,7 +206,44 @@ def train_model(
     writer.close()
     return model
 
+
+@torch.no_grad()
+def generate_music(model, start_sequence, output_length=300, temperature=1.0):
+    model.eval()
+    generated_seq = start_sequence
+
+    # 1. Phase de pré-remplissage (lecture de l'amorce)
+    input_indices = [char_to_index[c] for c in start_sequence]
+    input_tensor = torch.tensor(input_indices, dtype=torch.long, device=device).unsqueeze(0) # (1, len_prompt)
+    
+    # On récupère les logits et l'état caché (h, c) à la fin de l'amorce
+    logits, hidden_state = model(input_tensor, hidden_state=None)
+
+    # 2. Boucle de génération auto-régressive caractère par caractère
+    for _ in range(output_length):
+        # Logits du dernier pas de temps divisés par la température
+        last_logits = logits[:, -1, :] / temperature
+        probs = F.softmax(last_logits, dim=-1).squeeze(0)
+
+        # Tirage aléatoire selon la distribution de probabilité
+        next_index = torch.multinomial(probs, num_samples=1).item()
+        next_char = index_to_char[next_index]
+        generated_seq += next_char
+
+        # Le caractère généré devient la seule entrée (1, 1) du pas de temps suivant !
+        input_tensor = torch.tensor([[next_index]], dtype=torch.long, device=device)
+        logits, hidden_state = model(input_tensor, hidden_state=hidden_state)
+
+    return generated_seq
+
+
+
 if __name__ == "__main__":
-    train_model(rnn_type="rnn", max_grad_norm=None, subset_size=10000, num_epochs=15)
-    train_model(rnn_type="rnn", max_grad_norm=1.0, subset_size=10000, num_epochs=15)
-    train_model(rnn_type="lstm", max_grad_norm=1.0, subset_size=10000, num_epochs=15)
+    best_model = train_model(rnn_type="lstm", max_grad_norm=1.0, subset_size=50000, num_epochs=30, hidden_size = 1024)
+
+    prompt = "X:1\nT:Irish Reel\nM:4/4\nL:1/8\nK:D\n"
+
+    for t in [0.2, 0.8, 2.0]:
+        print(f"\n Température T = {t}")
+        sample = generate_music(best_model, start_sequence=prompt, output_length=300, temperature=t)
+        print(sample)
