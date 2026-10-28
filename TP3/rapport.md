@@ -97,9 +97,35 @@ La couche qui concentre plus de 99% des paramètres est la 1ère, car elle doit 
 3.3) Le modèle qui apprend le mieux est AlexNet car sa perte diminue nettement plus vite et descend plus bas que celle du MLP, aussi son accuracy est supérieure en validation. Et le modèle qui surapprend le plus vite est AlexNet également car bien que la perte de validation ne fait que baisser, il y a une accélération très forte de son apprentissage en train par rapport au rythme plus plat du MLP
 
 &nbsp;
-! [Courbes Accuracy (train/val)](images/accuracy.png)
-! [Courbes loss (train/val)](images/loss.png)
+[Courbes Accuracy (train/val)](images/accuracy.png)
+[Courbes loss (train/val)](images/loss.png)
 
 ### Étape 2 : Impact de la profondeur (Modification d'architecture)
 
 3.3.b)  La difficulté à démarrer l'apprentissage qu'on observez au début relève d'un sous-apprentissage, car l'errur d'entrainement du modèle plus profond reste constamment plus élevée et sa précision que celles de l'AmexNet initial. Du point de vue du gradient, comme le réseau est plus profond, le signal d'erreur (gradient) qui repart de la fin vers le début s'affaiblit à chaque couche taversée. Les premières couches reçoivent donc un signal très faible, ce qui fait que leurs poids se mettent à jour plus lentement au démarrage
+
+## Exercice 4: Lancement et analyse d'un entraînement long via sbatch
+
+&nbsp;
+
+4.1) Une époque complète sur les 1,28 million d'images d'entraînement avec notre GPU dure exactement 24min et 16 sec (durée de mon epoque 1)
+A cette vitesse il faudrait environ 25 x 100 = 2 500 min = 42 heures pour compléter 100 époques sans Early Stopping
+
+&nbsp;
+
+4.2) 
+
+[Courbes Accuracy du dataset complet (train/val)](images/acc_complet.png)
+[Courbes loss du dataset complet (train/val)](loss_complet/loss.png)
+
+Sur le dataset complet de 1,28 million d'images, l'écart entre Loss/Train et Loss/validation est relativement faible. A l'inverse, dans l'exercice 3, avec seulement 20 000 images, l'écart était plus important, ce qui indiquait un risque de sur-apprentissage.
+Cela s'explique principalement par la quatité et la diversité des données. Avec plus d'images, le modèle apprend des caractéristiques plus générales au lieu de mémoriser les exemples d'entrainement. La Data Augmentation augmente aussi la diversité des images et aide le modèle à mieux généraliser.
+Ainsi, le modèle est moins succeptible de mémoriser les données d'entrainement et a des meilleurs résultats plus proches sur les données de validation. Le sur-apprentissage est donc plus faible grâce au dataset plus grand et à la Data Augmentation
+
+&nbsp;
+
+4.3) Lors des premières époques, la Loss/Validation peut être inférieure à la Loss/Train pour deux raisons principales:
+- La data augmentation: pendant le train, les images sont modifiées aléatoirement (recadrage, retournement...), elles sont donc plus difficiles à reconnaitre. En validation, ces transformations aléatoires sont désactivées, ce qui facilite les prédictions
+- Le dropout: Pendant le train, certaines neuronnes sont désactivés aléatoirement pour limiter le sur-apprentissage. En validation, le Dropout est désactivé ce qui permet au modèle d'utiliser tous ses neurones.
+
+Donc les images du train sont plus difficiles à traiter que celles de la val, ce qui peut expliquer une perte de validation plus faible

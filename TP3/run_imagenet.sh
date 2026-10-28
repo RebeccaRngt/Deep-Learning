@@ -7,6 +7,8 @@
 #SBATCH -J alexnet-full
 #SBATCH -o logs/%x-%j.out
 #SBATCH -e logs/%x-%j.err
+#SBATCH --account=csc_8607
+#SBATCH --qos=normal
 
 set -euo pipefail
 mkdir -p logs

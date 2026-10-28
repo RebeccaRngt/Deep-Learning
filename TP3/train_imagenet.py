@@ -161,7 +161,7 @@ def train_model(model_name="alexnet", batch_size=256, lr=1e-4, num_epochs=20, we
 
     if model_name == "alexnet":
         model = AlexNet(num_classes=1000).to(device)
-    if model_name == "alexnetnew":
+    elif model_name == "alexnetnew":
         model = AlexNetNew(num_classes=1000).to(device)
     elif model_name == "mlp":
         model = MLP(num_classes=1000).to(device)
@@ -217,7 +217,7 @@ def train_model(model_name="alexnet", batch_size=256, lr=1e-4, num_epochs=20, we
 
 
 if __name__ == "__main__":
-    alexnetnew = AlexNetNew()
+    alexnet = AlexNet()
 
-    print("Paramètres AlexNetNew :", count_parameters(alexnetnew))
-    train_model(model_name="alexnetnew", num_epochs=10, subset_size=20000)
+    print("Paramètres AlexNet :", count_parameters(alexnet))
+    train_model(model_name="alexnet", num_epochs=50, subset_size=None)
