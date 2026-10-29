@@ -12,3 +12,18 @@
 - Cela permet de standadiser les données et de simplifier
 
 &nbsp;
+
+## Exercice 2: Extraction de caractéristiques et Transfer Learning
+
+&nbsp;
+
+2.1) Il est crucial de geler (requires_grad = False) les poids du ResNet dans ce TP pour 2 raisons:
+- matérielle : ça réduit la consommation de mémoire GPU et accélère l'entrainement car les gradients du ResNet ne sont pas calculés.
+- algorithmique: Pour préserver les filtres visuels déjà appris lors du pré-entrainement sur ImageNet, en évitant que les mises à jour des poids ne dégradent ces caractéristiques
+
+&nbsp;
+
+2.2) Si on passe un tenseur image de forme (32, 3, 224, 224) (batch_size, channels, H, W) dans cnn_features, la dimension (shape) exacte du tenseur de sortie sera (32, 2048, 7, 7). 32 c'est le nombre d'images du batch, 2048 c'est les cartes caractéristiques, et les dimensions 7 x 7 à leur taille spatiale
+
+&nbsp;
+
