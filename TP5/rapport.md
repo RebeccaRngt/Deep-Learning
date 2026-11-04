@@ -27,3 +27,10 @@
 
 &nbsp;
 
+## Exercice 3: Extraction de caractéristiques et Transfer Learning
+
+&nbsp;
+
+3.a) La variable context_vector renvoyé par le module correspond conceptuellement à une combinaison pondérée des caractéristiques visuelles des 49 régions de l'image, sélectonnées selon l'imoortance attibuée par me mécanisme d'attention. Il résout le problème du goulot d'étrangement informationnel du Seq2Seq classique qui compresse toute l'image en un seul vecteur fixe, en permettant au RNN de se concentrer sur différentes régions de l'image à chaque étape de génération
+
+&nbsp;
