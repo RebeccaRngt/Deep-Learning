@@ -306,3 +306,120 @@ L'accélération n'est pas proportionnelle au nombre de threads, elle reste inf�
 &nbsp;
 
 5.6) La quantification dynamique concerne principalement les couches Linear et récurrentes mais pas les convolutions Conv2d. Or ResNet utilise surtout des convolutions : seule la dernière coucbe est linéaire et représente moins de 0,1 % des paramètres. La majorité du calcul reste donc en fp23. Le gain est rès faible et le calcul des plages des activations à chaque exécution ajoute même un coût supplémentaire
+
+&nbsp;
+
+## Rapport final
+
+&nbsp;
+
+### results_bench.csv
+
+| tag | materiel | arch | precision | channels_last | compile | donnees | workers | pin_memory | batch | img_s | img_s_min | img_s_max | pic_memoire_go | compilation_s | epoque_s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| ref-synth | NVIDIA H100 NVL | resnet50 | fp32 | False | False | synthetic |  |  | 64 | 719.5 | 717.3 | 721.6 | 5.95 | nan | nan |
+| ref-raw | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 3 | True | 64 | 707.4 | 705.4 | 709.5 | 5.95 | nan | 20.1 |
+| raw-w0 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 0 | True | 64 | 152.7 | 148.7 | 156.8 | 5.95 | nan | nan |
+| raw-w1 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 1 | True | 64 | 324.5 | 322.9 | 326.1 | 5.95 | nan | nan |
+| raw-w2 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 2 | True | 64 | 692.8 | 692.7 | 692.9 | 5.95 | nan | nan |
+| raw-w3 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 3 | True | 64 | 684.8 | 681.7 | 688.0 | 5.95 | nan | nan |
+| raw-w3-nopin | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 3 | False | 64 | 617.2 | 610.8 | 623.7 | 5.95 | nan | nan |
+| small-w0 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | small | 0 | True | 64 | 260.8 | 260.0 | 261.7 | 5.95 | nan | nan |
+| small-w3 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | small | 3 | True | 64 | 679.8 | 678.3 | 681.2 | 5.95 | nan | nan |
+| raw-w0 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 0 | True | 64 | 178.9 | 175.9 | 181.9 | 5.95 | nan | nan |
+| raw-w0 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 0 | True | 64 | 231.2 | 229.8 | 232.5 | 5.95 | nan | nan |
+| raw-w1 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 1 | True | 64 | 342.8 | 339.6 | 346.0 | 5.95 | nan | nan |
+| raw-w2 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 2 | True | 64 | 701.2 | 695.4 | 707.0 | 5.95 | nan | nan |
+| raw-w3 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 3 | True | 64 | 699.4 | 696.8 | 701.9 | 5.95 | nan | nan |
+| raw-w3-nopin | NVIDIA H100 NVL | resnet50 | fp32 | False | False | raw | 3 | False | 64 | 619.1 | 615.0 | 623.3 | 5.95 | nan | nan |
+| small-w0 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | small | 0 | True | 64 | 262.7 | 262.1 | 263.2 | 5.95 | nan | nan |
+| small-w3 | NVIDIA H100 NVL | resnet50 | fp32 | False | False | small | 3 | True | 64 | 690.2 | 690.0 | 690.5 | 5.95 | nan | nan |
+| fp32-synthetic | NVIDIA H100 NVL | resnet50 | fp32 | False | False | synthetic |  |  | 64 | 717.9 | 716.7 | 718.4 | 5.95 | nan | nan |
+| tf32-synthetic | NVIDIA H100 NVL | resnet50 | tf32 | False | False | synthetic |  |  | 64 | 1646.1 | 1629.5 | 1672.7 | 5.93 | nan | nan |
+| bf16-synthetic | NVIDIA H100 NVL | resnet50 | bf16 | False | False | synthetic |  |  | 64 | 2008.1 | 2007.8 | 2008.1 | 3.29 | nan | nan |
+| bf16-cl-synthetic | NVIDIA H100 NVL | resnet50 | bf16 | True | False | synthetic |  |  | 64 | 3349.8 | 3246.4 | 3413.9 | 3.29 | nan | nan |
+| bf16-cl-compile-synthetic | NVIDIA H100 NVL | resnet50 | bf16 | True | True | synthetic |  |  | 64 | 3602.9 | 3570.6 | 3940.3 | 3.07 | 49.6 | nan |
+| bf16-cl-raw-w1 | NVIDIA H100 NVL | resnet50 | bf16 | True | False | raw | 1 | True | 64 | 282.6 | 261.1 | 298.1 | 3.29 | nan | nan |
+| bf16-cl-compile-raw-w1 | NVIDIA H100 NVL | resnet50 | bf16 | True | True | raw | 1 | True | 64 | 226.5 | 205.0 | 232.0 | 3.07 | 5.8 | nan |
+| bf16-cl-raw-w3 | NVIDIA H100 NVL | resnet50 | bf16 | True | False | raw | 3 | True | 64 | 1404.5 | 715.7 | 2505.3 | 3.29 | nan | nan |
+| bf16-cl-compile-raw-w3 | NVIDIA H100 NVL | resnet50 | bf16 | True | True | raw | 3 | True | 64 | 3515.7 | 3436.7 | 3524.1 | 3.07 | 5.6 | nan |
+| bf16-cl-small-w1 | NVIDIA H100 NVL | resnet50 | bf16 | True | False | small | 1 | True | 64 | 498.6 | 487.3 | 500.4 | 3.29 | nan | nan |
+| bf16-cl-compile-small-w1 | NVIDIA H100 NVL | resnet50 | bf16 | True | True | small | 1 | True | 64 | 330.0 | 326.5 | 381.8 | 3.07 | 4.2 | nan |
+| bf16-cl-small-w3 | NVIDIA H100 NVL | resnet50 | bf16 | True | False | small | 3 | True | 64 | 2673.2 | 2623.3 | 2686.6 | 3.29 | nan | nan |
+| bf16-cl-compile-small-w3 | NVIDIA H100 NVL | resnet50 | bf16 | True | True | small | 3 | True | 64 | 1387.7 | 1106.5 | 2809.2 | 3.07 | 5.5 | nan |
+
+### results_ddp.csv
+
+| tag | materiel | processus | noeuds | backend | precision | bf16_hook | donnees | accumulation | batch_par_processus | batch_effectif | pas_ms | img_s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| l4-x1 | NVIDIA L4 | 1 | 1 | nccl | bf16 | False | synthetic | 1 | 64 | 64 | 136.9 | 467.6 |
+| l4-x2 | NVIDIA L4 | 2 | 2 | nccl | bf16 | False | synthetic | 1 | 64 | 128 | 866.3 | 147.8 |
+| l4-x2-bf16hook | NVIDIA L4 | 2 | 2 | nccl | bf16 | True | synthetic | 1 | 64 | 128 | 463.4 | 276.2 |
+| l4-x1-accum8 | NVIDIA L4 | 1 | 1 | nccl | bf16 | False | synthetic | 8 | 64 | 512 | 1036.9 | 493.8 |
+| l4-x2-accum8-bf16hook | NVIDIA L4 | 2 | 2 | nccl | bf16 | True | synthetic | 8 | 64 | 1024 | 1358.7 | 753.6 |
+
+### results_maxbatch.csv
+
+| tag | materiel | precision | channels_last | batch_max |
+|---|---|---|---|---|
+| ref-maxbatch | NVIDIA H100 NVL | fp32 | False | 1128 |
+| maxbatch-bf16 | NVIDIA H100 NVL | bf16 | True | 2200 |
+
+### results_quant.csv
+
+| tag | variante | threads | calibration | taille_mo | latence_ms | premier_appel_s | top1_val | accord_fp32 | ecart_logits | n_val |
+|---|---|---|---|---|---|---|---|---|---|---|
+| calib200 | fp32-eager | 4 |  | 94.3 | 49.85 | 0.1 | 0.998 | 1.0 | 0.0 | 500 |
+| calib200 | fp32 | 4 |  | 94.3 | 29.98 | 34.7 | 0.998 | 1.0 | 0.0 | 500 |
+| calib200 | bf16 | 4 |  | 47.2 | 16.49 | 6.1 | 0.998 | 1.0 | 0.0229 | 500 |
+| calib200 | int8 | 4 | 200 | 23.9 | 9.54 | 4.6 | 0.998 | 1.0 | 0.0934 | 500 |
+| calib10 | int8 | 4 | 10 | 23.9 | 10.96 | 13.8 | 0.996 | 0.998 | 0.1007 | 500 |
+| threads1 | fp32 | 1 |  | 94.3 | 98.12 | 13.8 | 1.0 | 1.0 | 0.0 | 100 |
+| threads1 | int8 | 1 | 200 | 23.9 | 29.46 | 3.1 | 0.99 | 0.99 | 0.0994 | 100 |
+
+### results_train.csv
+
+| tag | materiel | epoque | precision | channels_last | compile | donnees | workers | epoque_s | img_s | top1_val |
+|---|---|---|---|---|---|---|---|---|---|---|
+| best | NVIDIA H100 NVL | 0 | bf16 | True | True | small | 3 | 48.4 | 265.5 | 0.99 |
+| best | NVIDIA H100 NVL | 1 | bf16 | True | True | small | 3 | 12.3 | 1047.6 | 0.996 |
+
+&nbsp;
+
+### Questions
+
+&nbsp;
+
+1) 
+| Configuration | Matériel | Données | Débit (img/s) | Pic mémoire / taille | Temps/époque |
+| ----- | :---: | :---: | :---: | :---: | :---: |
+| ref-synth fp32 | H100 NVL | Synthétiques | 719,5 | 5,95 Go | - |
+| ref-raw fp32 | H100 NVL | Raw, 3 workers | 707,4 | 5,95 Go | 20,1 s |
+| ref-w0 | H100 NVL | Raw, 0 worker | 231,2 | 5,95 Go | - |
+| ref-w1 | H100 NVL | Raw, 1 worker | 342,8 | 5,95 Go | - |
+| small-w0 | H100 NVL | Small, 0 worker | 262,7 | 5,95 Go | - |
+| small-w3 | H100 NVL | Small, 3 workers | 690,2 | 5,95 Go | - |
+| tf32-synthetic | H100 NVL | Synthétiques | 1 646,1 | 5,93 Go | - |
+| bf16-synthetic | H100 NVL | Synthétiques | 2 008,1 | 3,29 Go | - |
+| bf16-cl-synthetic | H100 NVL | Synthétiques | 3 349,8 | 3,29 Go | - |
+| bf16-cl-compile | H100 NVL | Synthétiques | 3 602,9 | 3,07 Go | - |
+| best | H100 NVL | Small, 3 workers | 1 047,6 | 3,07 Go | 12,3 s (48,4 s à la 1re époque) |
+| l4-x1 | 1 L4 | Synthétiques | 467,6 | - | - |
+| l4-x2 | 2 L4, 2 noeuds | Synthétiques | 147,8 | - | - |
+| l4-x2-bf16hook | 2 L4, 2 noeuds | Synthétiques | 276,2 | - | - |
+| l4-x2-accum8-bf16hook | 2 L4, 2 noeuds | Synthétiques | 753,6 | - | - |
+| fp32-eager CPU | CPU, 4 threads | Small, validation | 20,1 | 94,3 Mo | - |
+| fp32 compilé CPU | CPU, 4 threads | Small, validation | 33,4 | 94,3 Mo | - |
+| bf16 compilé CPU | CPU, 4 threads | Small, validation | 60,6 | 47,2 Mo | - |
+| int8 compilé CPU | CPU, 4 threads | Small, validation | 104,8 | 23,9 Mo | - |
+
+&nbsp;
+
+2) Avec deux GPU L4, le débit idéal serait de 935,2 images/s soit deux fois les 467,6 images/s obtenues avec un seul GPU. Mais, l4-x2 atteint seulement 147,8 images/s. La principale cause est la communication réseau : les deux noeuds un Ethernet 1 Gb/s. L'all–reduce de 94 Mo prend environ 806,6 ms, contre seulement 136,9 ms de calcul sur un GPU. Même avec 77,2 ms de communication masquée par le calcul, il reste 729,4 ms  d'attente réseau. Le bf16–hook, réduit le temps de communication à environ 403,3 ms. Avec l'accumulation sur 8 micro-batchs, le débit monte à 753,6 images/s mais il reste inférieur au débit idéal. Le chargement des données ne joue aucun rôle dans ces mesures DDP car elles utilisent des données synthétiques. Enfin la synchronisation impose d'attendre le processus le plus lent. Les différences de temps de calcul ou de chargement entre les nœuds peuvent donc ralentir l'ensemble, même si cet effet est négligeable dans le benchmark synthétique.
+
+&nbsp;
+
+3)
+- Pour entraîner le modèle sur le cluster: Je choisirai un seul GPU H100 NVL, avec bf16 channels_last et des données pré-redimensionnées (small) chargées avec plusieurs workers et pin_memory=True. Cette configuration évite les communications coûteuses entre les nœuds et permet d'exploiter efficacement le GPU. La compilation avec torch.compile est intéressante pour un entraînement long car elle augmente encore le débit jusqu'à 3602,9 image/s sur données synthétique. Par contre, pour un entraînement court, son temps de compilation initial peut annuler le gain. Je choisirais pas le DDP multi-noeuds sur ce réseau Ethernet 1 Gb/s : même avec la compression bf16 et l'accumulation, il reste pénalisé par les communications
+- Pour déployer le modèle sur CPU: Je recommande la variante int8 compilée avec une calibration sur 200 images. Elle réduit la taille du modèle de 94,3 à 23,9 Mo et atteint une latence de 9,54 ms par image sur 4 threads, tout en conservant un top-1 de 99,8 % et un accord de 100 % avec fp32. Pour une requête isolée, 4 threads permettent de réduire la latence. Pour traiter plusieurs requêtes simultanément, plusieurs instances indépendantes à un thread peuvent offrir un meilleur débit global
+
