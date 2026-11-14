@@ -39,10 +39,10 @@ def setup(args, device):
     set_fp32_mode(tf32=(args.precision == "tf32"))
     model = build_model(args.arch).to(device)
     if args.channels_last:
-        model = model.to(memory_format=___________________)
+        model = model.to(memory_format=torch.channels_last)
     opt = torch.optim.AdamW(model.parameters(), lr=1e-3)
-    amp_dtype = ______________ if args.precision == "bf16" else None
-    fwd = _____________(model) if args.compile else model
+    amp_dtype = torch.bfloat16 if args.precision == "bf16" else None
+    fwd = torch.compile(model) if args.compile else model
     return make_train_step(fwd, opt, nn.CrossEntropyLoss(), amp_dtype)
 
 

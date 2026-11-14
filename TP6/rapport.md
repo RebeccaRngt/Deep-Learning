@@ -125,3 +125,82 @@ Les traces Perfetto montrent que les 2 configurations sont limitées par le calc
 On peut conclure que le chargement et le décodage des images sont presque entièrement masqués. Le pipeline de données arrive à alimenter le GPU sans provoquer de perte importante des performances
 
 &nbsp;
+
+## Exercice 3 : Précision mixte, channels_last et torch.compile
+
+&nbsp;
+
+3.1) 
+| Configuration | Données | Débit médian (img/s) | Min (img/s) | Max (img/s) | Pic mémoire (Go) | Compilation (s)|
+| :---: | ----- | ----- | ----- | ----- | ----- | ----- |
+| fp32-synthetic | donnees=synthetic | img_s=717.9 | img_s_min=716.7 | img_s_max=718.4 | pic_memoire_go=5.95 | compilation_s=nan |
+| tf32-synthetic | donnees=synthetic | img_s=1646.1 | img_s_min=1629.5 | img_s_max=1672.7 | pic_memoire_go=5.93 | compilation_s=nan |
+| bf16-synthetic | donnees=synthetic | img_s=2008.1 | img_s_min=2007.8 | img_s_max=2008.1 | pic_memoire_go=3.29 | compilation_s=nan |
+| bf16-cl-synthetic | donnees=synthetic | img_s=3349.8 | img_s_min=3246.4 | img_s_max=3413.9 | pic_memoire_go=3.29 | compilation_s=nan |
+| bf16-cl-compile-synthetic | donnees=synthetic | img_s=3602.9 | img_s_min=3570.6 | img_s_max=3940.3 | pic_memoire_go=3.07 | compilation_s=49.6 |
+| bf16-cl-raw-w1 | donnees=raw | img_s=282.6 | img_s_min=261.1 | img_s_max=298.1 | pic_memoire_go=3.29 | compilation_s=nan |
+| bf16-cl-compile-raw-w1 | donnees=raw | img_s=226.5 | img_s_min=205.0 | img_s_max=232.0 | pic_memoire_go=3.07 | compilation_s=5.8 |
+| bf16-cl-raw-w3 | donnees=raw | img_s=1404.5 | img_s_min=715.7 | img_s_max=2505.3 | pic_memoire_go=3.29 | compilation_s=nan |
+| bf16-cl-compile-raw-w3 | donnees=raw | workers=3 | img_s=3515.7 | img_s_min=3436.7 | img_s_max=3524.1 | pic_memoire_go=3.07 | compilation_s=5.6 |
+| bf16-cl-small-w1 | donnees=small | img_s=498.6 | img_s_min=487.3 | img_s_max=500.4 | pic_memoire_go=3.29 |
+| bf16-cl-compile-small-w1 | donnees=small | batch=64 | img_s=330.0 | img_s_min=326.5 | img_s_max=381.8 | pic_memoire_go=3.07 | compilation_s=4.2 |
+| bf16-cl-small-w3 | donnees=small | img_s=2673.2 | img_s_min=2623.3 | img_s_max=2686.6 | pic_memoire_go=3.29 | compilation_s=nan |
+| bf16-cl-compile-small-w3 | donnees=small | img_s=1387.7 | img_s_min=1106.5 | img_s_max=2809.2 | pic_memoire_go=3.07 | compilation_s=5.5 |
+
+
+&nbsp;
+
+3.2) Le débit est de 719,9 images/s pour fp32-synthetuc contre 719,5 images/s pour ref-synth, soit un écart très très faible. Les mesures sont donc très stables, même sur 2 noeuds différents
+
+&nbsp;
+
+3.3) 
+
+| Optimisation | Débit (img/s) | Gain par rapport à l'étape précédente | Gain cumulé |
+| ----- | :---: | :---: | :---: |
+| fp32 | 717,9 | - | - |
+| + TF32 | 1 646,1 | x 2,29 | x 2,29 |
+| + bf16 | 2 008,1 | x 1,22 | x 2,80 |
+| + channels_last | 3 349,8 | x 1,67 | x 4,67 |
+| + torch.compile | 3 602,9 | x 1,08 | x 5,02 |
+
+Toor, corps
+- Tensor Cores (tf32): Les calculs utilisent principalement les CUDA Cores le mode tf32 permet d'utiliser les Tensor Cores spécialisés dans les calculs matriciels. Cela augmente fortement la vitesse de calcul : le débit passe de 717,9 à 1646,1 images/s, soit un gain de x2,29. La mémoire utilisée reste presque identique, car les données sont toujours stockées en 32 bits
+- Réduction du trafic mémoire (bf16 et channels_last): Le format bf16 utilise 16 bits au lieu de 32 pour les activations. Les données prennent donc moins de place en mémoire et les transferts sont plus rapides. Le pic de mémoire passe de 5,93 à 3,29 Go, avec un gain de vitesse supplémentaire de x1,22. Le format channels_last organise ensuite les données de manière plus adaptée aux Tensor Cores. Cela évite certaines réorganisations inutiles et améliore les accés mémoire, apportant un gain supplémentaire de x1,67
+- Fusion d'opérateurs (torch.compile): Normalement, PyTorch lance un noyau CUDA pour chaque opération, ce qui entraine plusieurs transferts de données entre la mémoire de GPU et les unités de calcul. torch.compile regroupe plusieurs opéations compatibles dans un même noyau. Les données intermédiaires sont ainsi conservées plus près des unités de calcul, ce qui réduit les transferts mémoire et les lancements de noyaux. Le pic mémoire descend à 3,07 Go et le débit gagne encore x1,08
+Au total, la combinaison de ces optimisations permet d'obtenir un début environ 5x supérieur au fp32 de départ
+
+&nbsp;
+
+3.4) Les résultats confiment les estimations de l'ex 2:
+- Avec 1 worker, le débit reste faible : 226 à 283 img/s en raw eet 330 à 499 img/s en small
+- Avec 3 workers, le débt augmente, mais reste généralement inférieur au débit synthétique
+- raw-3 avec compilation atteint 3 515,7 img/s grâce au cache RAM du système
+En synthetic, le GPU est le principal facteur limitant. En raw et small, c'est surtout le chargement des images sur le CPU. La compilation n'apporte donc pas tout le temps de gain quand le chargement limite déjà les performances, elle peut même diminuer le débit comme elle utilise aussi des ressouces CPU, ce qui explique la loi Amdahl: accélérer le GPU ne suiffit pas si le CPU ne prépare pas les données rapidement
+
+&nbsp;
+
+3.5) Un GPU 1g.12gb a environ 1/7 de la puissance d'un H100 entier, soit 3 603/7 environ 515 img/s. Pour alimenter un H100 entier à 3 603 images/s, il faudrait environ 11 workers (3 603 / 341) pour raw et 9 workers (3 603 / 414) pour small. Un noeud arcadia disposant de 30 coeurs CPU peut largement supporter ce nombre de workers. In faudrait simplement demande + de CPU, avec par ex --cpus-per-task=12 ou 16
+
+&nbsp;
+
+3.6)La première compilation prend 49,6 sec alors que les suivantes prennent seulement entre 4,2 et 5,8 sec. cela explique par le cache de PyTorch : dans la 1ère exécution, les noyeux doivent être générés et compilés. Les executions suivantes réutilisent les fichiers déjà compilés
+Le gain apporté par la compilation est d'environ 1,34 ms par itération. Il faut donc 36 itérations sans cache et 4 170 itérations avec cache. Pour 2 époques de 201 pas, soit 402 itérations, la compilation n'est donc pas rentable. Le temps économisé est juste d'environ 0,54 sec, contre 5,6 à 49,6 sec de compilation
+torch.compile devient interessant surtout pour les entrainements longs.
+
+&nbsp;
+
+3.7) Le batch maximal atteint est de 2 200 images en bf16 et 1 128 images en fp32 donc le rapport est 2200 / 1128 soit environ 1,95. Le bacth maxest donc presque 2 fois plus grand en bf16. C'est cohérent avec le cours, car bf16 utilise 2 octzets par valeur contre 4 en fp32, la mémoire utilisée pas les activations est donc divisée par 2, le rapport n'est pas exactement égale à 2 car certains éléments comme les poids et l'états de l'optimiseur restent en fp32
+
+&nbsp;
+
+3.8)
+
+| Époque | Temps | Débit | Précision top-1 |
+| ----- | :---: | :---: | :---: |
+| 0 | 48,4 s | 266 img/s | 99,0% |
+| 1 | 12,3 s | 1 048 img/s | 99,6% |
+
+La 1ère époque est plus longue car elle inclut environ 36,1 sec de compilation du modèle avec torch.compile et la 2e correspond davantage au temps réel d'entrainement. Par rapport à ref-raw, qui prenait 20,1 sec par époque, on obtient: 20,1 / 12,3 = 1,63. Le temps d'entrainement diminue donc
+
+&nbsp;
