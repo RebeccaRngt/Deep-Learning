@@ -261,3 +261,48 @@ Le recouvrement a donc caché environ 77,2 ms de calcul pendant les communicatio
 
 4.8) Tous les processus utilisent la même graine pour l’initialisation car tous les GPU doivent commencer avec les mêmes poids pour entrainer le même modèle mais ils utilisent des données différentes car chaque GPU traite une partie différente du jeu de données afin de répartir le calcul et d'éviter de calculer plusieurs fois les mêmes gradients
 Si on oublie sampler.set_epoch(epoch) dans la branche small, le mélange des données ne change pas entre les époques et les GPU revoient les mêmes images dans le même ordre et si on oublie model.no_sync() dans make_ddp_step, une synchronisation des gradients est lancée à chaque micro-batch au lieu d'une seule à la fin de l'accumulation et cela multiplie les communications et ralentit fortement l'entrainement
+
+&nbsp;
+
+## Exercice 5 : Quantification int8 sur CPU
+
+&nbsp;
+
+5.1)
+| Variante | Taille | Latence | Premier appel | Top-1 |
+| ----- | :---: | :---: | :---: | :---: |
+| fp32-eager | 94,3 Mo | 49,85 ms | 0,1 s | 99,8 % |
+| fp32 compilé | 94,3 Mo | 29,98 ms | 34,7 s | 99,8 % |
+| fp32-eager | 47,2 Mo | 16,49 ms | 6,1 s | 99,8 % |
+| fp32-eager | 23,9 Mo | 9,54 ms | 0,1 s | 99,8 % |
+
+&nbsp;
+
+5.2) Le rapport de taille entre fp32 et int8 vaut environ 3,95 et non exactement 4, ça s'explique par les métadonées de quantification et par certains tenseurs qui restent en fp32. weights_mb mesure uniquement les poids rééellement utilsés dans le graphe. Le state_dict contient aussi d'anciens poids fp32 conservés mais inutilisés après conversion, ce qui fausserait la mesure
+
+&nbsp;
+
+5.3) Les latences montrant que la compilation améloire déjà les performances : le temps passe de 49,85 ms en fp32 eager à 29,98 ms en fp32 compilé, soit un gain de x1,66. Ensuite le passage en bf16 réduit la latence à 16,49 ms (gain de x1,82) tandis que l'int8 atteint 9,54 ms soit un gain de x3,14 par rapport au fp32 compilé. Il faut comparer l'int8 au fp32 compilé plutôt qu'au fp32 eager, car les deux utilisent torch.compile. Cela permet d'isoler le gain apporté par la quantification, sans confondre avec celui de la compilation. Ce gain est notamment lié aux instructions matérielles VNNI et AMX du processeur qui accélèrent les calculs en int8
+
+&nbsp;
+
+5.4) Avec calib200, l’int8 conserve un top-1, un de 99,8 % un accord avec fp32 de 100 % et un écart moyen des logits de 0,0934. Le top-1 ne suffit pas : deux modèles peuvent prédire la même classe, tout en donnant des scores différents. L'écart des logits permet donc de mieux évaluer la fidélité de la quantification
+
+| Calibration | Top-1 | Accord fp32 | Écat des logits |
+| ----- | :---: | :---: | :---: |
+| calib200 | 99,8 % | 100 % | 0,0934 |
+| calib10 | 99,6 % | 99,8 % | 0,1007 |
+
+&nbsp;
+
+5.5)
+| Variante | 1 thread | 4 threads | Accélération |
+| ----- | :---: | :---: | :---: |
+| fp32 compilé | 98,12 ms | 29,98 ms | x3,27 |
+| int8 compilé | 29,46 ms | 9,54 ms | x3,09 |
+
+L'accélération n'est pas proportionnelle au nombre de threads, elle reste inférieure à x4, notamment à cause des synchronisations et du partage des ressources CPU. Pour le déploiement, plusieurs threads réduisent la latence d'une requête, par contre plusieurs instance à un thread peuvent offrir un meilleur débit total lorsqque plusieurs requêtes arrivent en même temps
+
+&nbsp;
+
+5.6) La quantification dynamique concerne principalement les couches Linear et récurrentes mais pas les convolutions Conv2d. Or ResNet utilise surtout des convolutions : seule la dernière coucbe est linéaire et représente moins de 0,1 % des paramètres. La majorité du calcul reste donc en fp23. Le gain est rès faible et le calcul des plages des activations à chaque exécution ajoute même un coût supplémentaire
