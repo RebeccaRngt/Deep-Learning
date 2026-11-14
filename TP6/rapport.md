@@ -141,9 +141,9 @@ On peut conclure que le chargement et le d√©codage des images sont presque enti√
 | bf16-cl-raw-w1 | donnees=raw | img_s=282.6 | img_s_min=261.1 | img_s_max=298.1 | pic_memoire_go=3.29 | compilation_s=nan |
 | bf16-cl-compile-raw-w1 | donnees=raw | img_s=226.5 | img_s_min=205.0 | img_s_max=232.0 | pic_memoire_go=3.07 | compilation_s=5.8 |
 | bf16-cl-raw-w3 | donnees=raw | img_s=1404.5 | img_s_min=715.7 | img_s_max=2505.3 | pic_memoire_go=3.29 | compilation_s=nan |
-| bf16-cl-compile-raw-w3 | donnees=raw | workers=3 | img_s=3515.7 | img_s_min=3436.7 | img_s_max=3524.1 | pic_memoire_go=3.07 | compilation_s=5.6 |
-| bf16-cl-small-w1 | donnees=small | img_s=498.6 | img_s_min=487.3 | img_s_max=500.4 | pic_memoire_go=3.29 |
-| bf16-cl-compile-small-w1 | donnees=small | batch=64 | img_s=330.0 | img_s_min=326.5 | img_s_max=381.8 | pic_memoire_go=3.07 | compilation_s=4.2 |
+| bf16-cl-compile-raw-w3 | donnees=raw | img_s=3515.7 | img_s_min=3436.7 | img_s_max=3524.1 | pic_memoire_go=3.07 | compilation_s=5.6 |
+| bf16-cl-small-w1 | donnees=small | img_s=498.6 | img_s_min=487.3 | img_s_max=500.4 | pic_memoire_go=3.29 | compilation_s=nan |
+| bf16-cl-compile-small-w1 | donnees=small | img_s=330.0 | img_s_min=326.5 | img_s_max=381.8 | pic_memoire_go=3.07 | compilation_s=4.2 |
 | bf16-cl-small-w3 | donnees=small | img_s=2673.2 | img_s_min=2623.3 | img_s_max=2686.6 | pic_memoire_go=3.29 | compilation_s=nan |
 | bf16-cl-compile-small-w3 | donnees=small | img_s=1387.7 | img_s_min=1106.5 | img_s_max=2809.2 | pic_memoire_go=3.07 | compilation_s=5.5 |
 
