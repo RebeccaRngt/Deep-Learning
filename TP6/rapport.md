@@ -204,3 +204,60 @@ torch.compile devient interessant surtout pour les entrainements longs.
 La 1ère époque est plus longue car elle inclut environ 36,1 sec de compilation du modèle avec torch.compile et la 2e correspond davantage au temps réel d'entrainement. Par rapport à ref-raw, qui prenait 20,1 sec par époque, on obtient: 20,1 / 12,3 = 1,63. Le temps d'entrainement diminue donc
 
 &nbsp;
+
+## Exercice 4 : Entraînement multi-GPU avec DDP sous SLURM
+
+&nbsp;
+
+4.1) NCCL utilise TCP/IP via sockets sur l'interface Ethernet ens18, car aucun périphérique InfiniBand n'est disponible et le GPUDirect RDMA est désactivé. Pour l'all-reduce de 102 Mo:
+- Durée : 877,2 ms
+- Débit algbw : 0,12 Go/s
+- Débit busbw : 0,12 Go/s
+- Conversion : environ 0,93 Gbit/s
+Cela correspond à un lien Ethernet 1 Gb/s
+
+&nbsp;
+
+4.2)
+| Configuration | Temps/pas (ms) | Débit global (img/s) | Accélération S = D2 / D1 | Efficacité E = S/2 |
+| ----- | :---: | :---: | :---: | :---: |
+| l4-x1 | 136,9 | 467,6 | x1,00 | - |
+| l4-x2 | 866,3 | 147,8 | x0,32 | 15,8 % |
+| l4-x2-bf16hook | 463,4 | 276,2 | x0,59 | 29,5 % |
+| l4-x1-accum8 | 1 036,9 | 493,8 | x1,00 | - |
+| l4-x2-accum8-bf16hook | 1 358,7 | 753,6 | x1,53 | 76,3 % |
+
+&nbsp;
+
+4.3) Le modèle à 10 classes a 23,5 M paramètres, soit environ 94 Mo de gradients fp32
+- Temps estimé de l'all-reduce : environ 807 ms
+- Temps de calcul sur un GPU : 136,9 ms
+- Sans recouvrement : 136,9 + 806,6 = 943,5 ms
+- Avec recouvrement parfait : max(136,9;806,6) = 806,6 ms
+- Temps mesuré sur deux noeuds : 866,3 ms
+Le recouvrement a donc caché environ 77,2 ms de calcul pendant les communications
+
+&nbsp;
+
+4.4) Cette option convertit les gradients en bfloat16 avant leur envoi sur le réseau. Leur taille passe de 94 à environ 47 Mo, et ça réduit le temps de communication. Le temps par pas passe de 866,3 à 463,4 ms et le débit augmente de 147,8 à 276,2 images/s. Le risque est une perte de précision lors de la conversion ce qui peut rendre la convergeance moins stable ou réduire légèrement la précision finale
+
+&nbsp;
+
+4.5) Le loi d'Amdahl ne convient pas ici car elle suppose une charge fixe repartie entre plusieurs processeurs mais ici chaque GPU traite son propre batch et les communications peuvent être recouvertes par les calculs. Pour l4-x2-accum8-bf16hook, le calcul sur GPU avec accumulation 8 est de 1 036,9 ms, la communication en bf16 est de 806,6 / 2 = 403,3 ms et le temps recouvert de 77,2 ms. On prédit donc T = 1 036,9 + 403,3 - 77,2 = 1 363 ms. La mesure réelle est de 1 358,7 ms soit suelement 4,3 ms d'écart donc la prédiction est très proche
+
+&nbsp;
+
+4.6) Le DDP devient rentable quand le temps de communication non recouvert est inférieur au temps de calcul local. Il faut donc augmenter le rapport entre calcul et communication. 2 leviers possibles :
+- Accumulation des gradients : plusieurs micro-batchs sont calculés avant une seule snchronisation. Prix : batch effectif plus grand et réglage du taux d'apprentissage plus compliqué
+- Compression des gradients en bf16: réduit de moitié le volume transféré. Prix: perte possible de précision numérique et risque sur la convergence
+
+&nbsp;
+
+4.7) Le batch effectif passe de 64 à 128 puis 1 024. Il faudrait ajuster le lr pour un vrai entrainement:
+- Avec AdamW: appliquer une régle en racine carrée. Multiplier le lr par la racine carrée de 2 pour 128 images puis par 4 pour 1 024 images. Ajouter warmup
+- Avec SGD: appliquer une règle linéaire. Multiplier le lr oar 2 pour 128 images puis par 16 pour 1 024 images. Et là aussi ajouter un warmup
+
+&nbsp;
+
+4.8) Tous les processus utilisent la même graine pour l’initialisation car tous les GPU doivent commencer avec les mêmes poids pour entrainer le même modèle mais ils utilisent des données différentes car chaque GPU traite une partie différente du jeu de données afin de répartir le calcul et d'éviter de calculer plusieurs fois les mêmes gradients
+Si on oublie sampler.set_epoch(epoch) dans la branche small, le mélange des données ne change pas entre les époques et les GPU revoient les mêmes images dans le même ordre et si on oublie model.no_sync() dans make_ddp_step, une synchronisation des gradients est lancée à chaque micro-batch au lieu d'une seule à la fin de l'accumulation et cela multiplie les communications et ralentit fortement l'entrainement
